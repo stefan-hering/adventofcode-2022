@@ -4,7 +4,9 @@ fun readInput(file: String) = Unit.javaClass.getResource(file)
     .readText()
     .split("\n\n")
     .map {
-      it.lines().map { it.toInt() }
+      it.lines()
+          .filter { it.isNotEmpty() }
+          .map { it.toInt() }
     }
 
 typealias Elf = List<Int>
