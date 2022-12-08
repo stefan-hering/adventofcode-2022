@@ -1,45 +1,40 @@
 package adventofcode.day08
 
-import kotlin.math.max
-
 fun readInput(file: String) = Unit.javaClass.getResource(file)
     .readText()
     .lines()
     .filter { it.isNotEmpty() }
     .map { it.toCharArray().map { it.digitToInt() }.toIntArray() }.toTypedArray()
 
-fun part1(treeGrid: Array<IntArray>): Long {
-  val visible = Array(treeGrid.size) { BooleanArray(treeGrid[0].size) }
+fun Array<BooleanArray>.markVisibleTree(x: Int, y: Int, tree: Int, max: Int): Int {
+  if (tree > max) {
+    this[x][y] = true
+    return tree
+  }
+  return max
+}
 
-  for (i in treeGrid.indices) {
-    val row = treeGrid[i]
+fun part1(forest: Array<IntArray>): Long {
+  val visibleTrees = Array(forest.size) { BooleanArray(forest[0].size) }
 
-    listOf(row.indices, row.indices.reversed()).forEach {
-      var max = -1
-      for (j in it) {
-        val tree = treeGrid[i][j]
-        if (tree > max) {
-          visible[i][j] = true
-          max = tree
+  listOf(forest.indices, forest.indices.reversed()).forEach { columnIndices ->
+    listOf(forest[0].indices, forest[0].indices.reversed()).forEach { rowIndices ->
+      for (y in rowIndices) {
+        var max = -1
+        for (x in columnIndices) {
+          max = visibleTrees.markVisibleTree(x, y, forest[x][y], max)
+        }
+      }
+      for (x in columnIndices) {
+        var max = -1
+        for (y in rowIndices) {
+          max = visibleTrees.markVisibleTree(x, y, forest[x][y], max)
         }
       }
     }
   }
 
-  for (j in treeGrid[0].indices) {
-    listOf(treeGrid.indices, treeGrid.indices.reversed()).forEach {
-      var max = -1
-      for (i in it) {
-        val tree = treeGrid[i][j]
-        if (tree > max) {
-          visible[i][j] = true
-          max = tree
-        }
-      }
-    }
-  }
-
-  return visible.sumOf { row -> row.sumOf { if (it) 1L else 0 } }
+  return visibleTrees.sumOf { row -> row.sumOf { if (it) 1L else 0 } }
 }
 
 fun part2(treeGrid: Array<IntArray>): Int {
@@ -50,28 +45,28 @@ fun part2(treeGrid: Array<IntArray>): Int {
       val tree = treeGrid[x][y]
 
       var left = 1
-      while(y - left > 0 && tree > treeGrid[x][y - left]) {
+      while (y - left > 0 && tree > treeGrid[x][y - left]) {
         left++
       }
 
       var right = 1
-      while(y + right < treeGrid[0].size - 1 && tree > treeGrid[x][y + right]) {
+      while (y + right < treeGrid[0].size - 1 && tree > treeGrid[x][y + right]) {
         right++
       }
 
       var up = 1
-      while(x - up > 0 && tree > treeGrid[x - up][y]) {
+      while (x - up > 0 && tree > treeGrid[x - up][y]) {
         up++
       }
 
       var down = 1
-      while(x + down < treeGrid.size - 1 && tree > treeGrid[x + down][y]) {
+      while (x + down < treeGrid.size - 1 && tree > treeGrid[x + down][y]) {
         down++
       }
 
 
       val score = left * right * up * down
-      if(score > maxScore) {
+      if (score > maxScore) {
         maxScore = score
       }
     }
