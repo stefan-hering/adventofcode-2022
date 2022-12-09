@@ -22,16 +22,14 @@ val Motion.length get() = second
 
 operator fun Position.minus(other: Position): Position = x - other.x to y - other.y
 
-fun Int.sign() = if(this >= 0) 1 else -1
-
 operator fun Rope.plus(motion: Motion): List<Rope> {
   val (direction, length) = motion
 
-  var newRope: Rope = this
-  val result = mutableListOf<Rope>()
+  var ropeState: Rope = this
+  val ropeStates = mutableListOf<Rope>()
 
   for (i in 1..length) {
-    newRope = newRope.run {
+    ropeState = ropeState.run {
       val newHead = when (direction) {
         'U' -> head.copy(first = head.x + 1)
         'R' -> head.copy(second = head.y + 1)
@@ -39,39 +37,36 @@ operator fun Rope.plus(motion: Motion): List<Rope> {
         else -> head.copy(second = head.y - 1)
       }
 
-      var prev = newHead
-      val newTail = this.drop(1).map { tail ->
-        val diff = prev - tail
+      listOf(newHead) + this.drop(1).runningFold(newHead) { previous, knot ->
+        val diff = previous - knot
 
-        val newTail = when {
-          abs(diff.x) == 2 -> tail.x + diff.x.sign to when {
-            abs(diff.y) >= 1 -> tail.y + diff.y.sign
-            else -> tail.y
+        if (abs(diff.x) > 1 || abs(diff.y) > 1) {
+          when {
+            abs(diff.x) > 0 -> knot.x + diff.x.sign
+            else -> knot.x
+          } to when {
+            abs(diff.y) > 0 -> knot.y + diff.y.sign
+            else -> knot.y
           }
-
-          abs(diff.y) == 2 -> when {
-            abs(diff.x) >= 1 -> tail.x + diff.x.sign()
-            else -> tail.x
-          } to tail.y + diff.y.sign
-
-          else -> tail
-        }
-        prev = newTail
-        newTail
-      }
-      listOf(newHead) + newTail
+        } else knot
+      }.drop(1)
     }
-    result.add(newRope)
+
+    ropeStates.add(ropeState)
   }
-  return result
+  return ropeStates
 }
 
 fun solve(motions: List<Motion>, ropeLength: Int) =
-    motions.runningFold(listOf((1..ropeLength).map { Position(0,0) })) { rope, motion ->
-      rope.last() + motion
-    }.flatten().map {
-      it.last()
-    }.distinct().count()
+    motions.asSequence()
+        .runningFold(
+            listOf((1..ropeLength)
+                .map { Position(0, 0) })
+        ) { rope, motion ->
+          rope.last() + motion
+        }.flatten().map {
+          it.last()
+        }.distinct().count()
 
 
 fun main() {
